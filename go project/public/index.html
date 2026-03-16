@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Company Job Search</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen py-8 px-4">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-5xl md:text-6xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+                Company Search
+            </h1>
+            <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                Search for companies hiring for specific job titles
+            </p>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="mb-12">
+            <div class="relative max-w-md mx-auto">
+                <input 
+                    type="text" 
+                    id="searchInput"
+                    placeholder="Search job titles like 'C++', 'Engineer'..."
+                    class="w-full px-6 py-4 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500 focus:border-transparent shadow-lg transition-all duration-300 bg-white/80 backdrop-blur-sm"
+                >
+                <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                    <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div id="results" class="space-y-6">
+            <!-- Results will be populated here -->
+            <div id="noResults" class="text-center py-20 hidden">
+                <div class="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-r from-yellow-400 to-orange-400 flex items-center justify-center">
+                    <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2 2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-700 mb-2">No companies found</h3>
+                <p class="text-lg text-gray-500">Try searching for a different job title</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const resultsContainer = document.getElementById('results');
+        const noResults = document.getElementById('noResults');
+        let debounceTimer;
+
+        // Debounced search function
+        function searchCompanies(query) {
+            if (query.length === 0) {
+                resultsContainer.innerHTML = '';
+                noResults.classList.add('hidden');
+                return;
+            }
+
+            fetch(`/api/companies?search=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(companies => {
+                    if (companies.length === 0) {
+                        resultsContainer.classList.add('hidden');
+                        noResults.classList.remove('hidden');
+                    } else {
+                        resultsContainer.classList.remove('hidden');
+                        noResults.classList.add('hidden');
+                        displayCompanies(companies);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    resultsContainer.innerHTML = '<p class="text-center text-red-500 py-20">Error loading companies. Please try again.</p>';
+                });
+        }
+
+        function displayCompanies(companies) {
+            resultsContainer.innerHTML = companies.map(company => `
+                <div class="group bg-white/70 backdrop-blur-sm rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 animate-fade-in p-8 border border-white/50">
+                    <div class="flex items-start justify-between mb-6">
+                        <h3 class="text-2xl md:text-3xl font-bold text-gray-800 group-hover:text-blue-600 transition-colors">${company.name}</h3>
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            ${company.jobs.slice(0, 3).map(job => `
+                                <span class="px-3 py-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-sm rounded-full font-medium shadow-md">${job}</span>
+                            `).join('')}
+                            ${company.jobs.length > 3 ? `<span class="px-3 py-1 bg-gray-200 text-gray-600 text-sm rounded-full font-medium">+${company.jobs.length - 3}</span>` : ''}
+                        </div>
+                    </div>
+                    <a href="${company.careerLink}" target="_blank" class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 group-hover:translate-x-2">
+                        View Careers
+                        <svg class="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                        </svg>
+                    </a>
+                </div>
+            `).join('');
+        }
+
+        // Debounce search (300ms)
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                searchCompanies(e.target.value);
+            }, 300);
+        });
+
+        // Load all companies on page load (empty search)
+        searchCompanies('');
+    </script>
+</body>
+</html>
+
