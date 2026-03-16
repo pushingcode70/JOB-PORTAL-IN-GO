@@ -7,9 +7,9 @@ A simple web app that lets users search companies by job roles.
 
 1. Clone the repo
 git clone https://github.com/pushingcode70/JOB-PORTAL-IN-GO.git
-
+//diretory is JOB-PORTAL-IN-GO/go project
 2. Go to the folder
-cd JOB-PORTAL-IN-GO
+cd "go project"
 
 3. Install dependencies
 go mod tidy
